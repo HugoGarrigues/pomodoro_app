@@ -1,7 +1,11 @@
+// lib/views/pomodoro_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../viewmodels/pomodoro_viewmodel.dart';
 import '../models/pomodoro_timer.dart';
+import 'pomodoro_history_page.dart';
 
 class PomodoroPage extends StatelessWidget {
   const PomodoroPage({super.key});
@@ -18,7 +22,20 @@ class PomodoroPage extends StatelessWidget {
     final timer = viewModel.timer;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Pomodoro")),
+      appBar: AppBar(
+        title: const Text("Pomodoro"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PomodoroHistoryPage()),
+              );
+            },
+          )
+        ],
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),

@@ -1,15 +1,13 @@
+// lib/main.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'viewmodels/pomodoro_viewmodel.dart';
 import 'views/pomodoro_page.dart';
 
 void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => PomodoroViewModel(),
-      child: const PomodoroApp(),
-    ),
-  );
+  runApp(const PomodoroApp());
 }
 
 class PomodoroApp extends StatelessWidget {
@@ -17,10 +15,13 @@ class PomodoroApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Pomodoro-App',
-      theme: ThemeData.dark(),
-      home: const PomodoroPage(),
+    return ChangeNotifierProvider(
+      create: (_) => PomodoroViewModel(),
+      child: MaterialApp(
+        title: 'Pomodoro App',
+        theme: ThemeData(primarySwatch: Colors.red),
+        home: const PomodoroPage(),
+      ),
     );
   }
 }
