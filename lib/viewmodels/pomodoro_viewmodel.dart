@@ -1,20 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pomodoro_timer.dart';
-
-class PomodoroSessionRecord {
-  final PomodoroSessionType sessionType;
-  final DateTime startTime;
-  final DateTime endTime;
-
-  PomodoroSessionRecord({
-    required this.sessionType,
-    required this.startTime,
-    required this.endTime,
-  });
-
-  Duration get duration => endTime.difference(startTime);
-}
+import '../models/pomodoro_session_record.dart';
 
 class PomodoroViewModel extends ChangeNotifier {
   PomodoroTimer _timer;
@@ -22,10 +10,10 @@ class PomodoroViewModel extends ChangeNotifier {
   DateTime? _sessionStartTime;
   final List<PomodoroSessionRecord> _history = [];
 
-  // Durées personnalisables en secondes (par défaut 25/5/15)
-  int workDuration = 25 * 60;
-  int shortBreakDuration = 5 * 60;
-  int longBreakDuration = 15 * 60;
+  // Durées par défaut en secondes
+  int _workDuration = 25 * 60;
+  int _shortBreakDuration = 5 * 60;
+  int _longBreakDuration = 15 * 60;
 
   PomodoroViewModel()
       : _timer = PomodoroTimer(
@@ -33,22 +21,29 @@ class PomodoroViewModel extends ChangeNotifier {
           remainingSeconds: 25 * 60,
           sessionType: PomodoroSessionType.work,
           isRunning: false,
-        );
+        ) {
+    _loadSettings();
+  }
 
+  // Getters
   PomodoroTimer get timer => _timer;
   List<PomodoroSessionRecord> get history => List.unmodifiable(_history);
+  int get workDuration => _workDuration;
+  int get shortBreakDuration => _shortBreakDuration;
+  int get longBreakDuration => _longBreakDuration;
 
-  // Getters demandés pour pomodoro_page.dart
-  PomodoroSessionType get currentSessionType => _timer.sessionType;
-
-  int get remaining => _timer.remainingSeconds;
-
-  bool get isRunning => _timer.isRunning;
-
+  // Méthodes de contrôle du timer
   void start() {
     if (_timer.isRunning) return;
 
     _sessionStartTime ??= DateTime.now();
+
+    _timer = PomodoroTimer(
+      totalSeconds: _timer.totalSeconds,
+      remainingSeconds: _timer.remainingSeconds,
+      sessionType: _timer.sessionType,
+      isRunning: true,
+    );
 
     _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_timer.remainingSeconds > 0) {
@@ -101,14 +96,43 @@ class PomodoroViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Méthodes de configuration
+  Future<void> setWorkDuration(int minutes) async {
+    _workDuration = minutes * 60;
+    await _saveSettings();
+    if (_timer.sessionType == PomodoroSessionType.work) {
+      reset();
+    }
+    notifyListeners();
+  }
+
+  Future<void> setShortBreakDuration(int minutes) async {
+    _shortBreakDuration = minutes * 60;
+    await _saveSettings();
+    if (_timer.sessionType == PomodoroSessionType.shortBreak) {
+      reset();
+    }
+    notifyListeners();
+  }
+
+  Future<void> setLongBreakDuration(int minutes) async {
+    _longBreakDuration = minutes * 60;
+    await _saveSettings();
+    if (_timer.sessionType == PomodoroSessionType.longBreak) {
+      reset();
+    }
+    notifyListeners();
+  }
+
+  // Méthodes privées
   int _getSessionDuration(PomodoroSessionType type) {
     switch (type) {
       case PomodoroSessionType.work:
-        return workDuration;
+        return _workDuration;
       case PomodoroSessionType.shortBreak:
-        return shortBreakDuration;
+        return _shortBreakDuration;
       case PomodoroSessionType.longBreak:
-        return longBreakDuration;
+        return _longBreakDuration;
     }
   }
 
@@ -135,27 +159,41 @@ class PomodoroViewModel extends ChangeNotifier {
       isRunning: false,
     );
     notifyListeners();
-
-    // TODO: ajouter son et alertes ici plus tard
   }
 
-  // Méthode pour modifier la durée selon le type
-  void setDuration(PomodoroSessionType type, int seconds) {
-    switch (type) {
-      case PomodoroSessionType.work:
-        workDuration = seconds;
-        break;
-      case PomodoroSessionType.shortBreak:
-        shortBreakDuration = seconds;
-        break;
-      case PomodoroSessionType.longBreak:
-        longBreakDuration = seconds;
-        break;
-    }
-    // Reset si session courante modifiée
-    if (_timer.sessionType == type) {
-      reset();
-    }
+  // Sauvegarde et chargement des paramètres
+  Future<void> _saveSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('work_duration', _workDuration ~/ 60);
+    await prefs.setInt('short_break_duration', _shortBreakDuration ~/ 60);
+    await prefs.setInt('long_break_duration', _longBreakDuration ~/ 60);
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    _workDuration = (prefs.getInt('work_duration') ?? 25) * 60;
+    _shortBreakDuration = (prefs.getInt('short_break_duration') ?? 5) * 60;
+    _longBreakDuration = (prefs.getInt('long_break_duration') ?? 15) * 60;
+    
+    // Mettre à jour le timer actuel si nécessaire
+    _timer = PomodoroTimer(
+      totalSeconds: _getSessionDuration(_timer.sessionType),
+      remainingSeconds: _getSessionDuration(_timer.sessionType),
+      sessionType: _timer.sessionType,
+      isRunning: false,
+    );
     notifyListeners();
+  }
+
+  String formatDuration(int seconds) {
+    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$secs';
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
   }
 }

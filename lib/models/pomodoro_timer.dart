@@ -1,4 +1,19 @@
-enum PomodoroSessionType { work, shortBreak, longBreak }
+enum PomodoroSessionType { 
+  work, 
+  shortBreak, 
+  longBreak;
+  
+  String get displayName {
+    switch (this) {
+      case PomodoroSessionType.work:
+        return 'Travail';
+      case PomodoroSessionType.shortBreak:
+        return 'Pause courte';
+      case PomodoroSessionType.longBreak:
+        return 'Pause longue';
+    }
+  }
+}
 
 class PomodoroTimer {
   final int totalSeconds;
