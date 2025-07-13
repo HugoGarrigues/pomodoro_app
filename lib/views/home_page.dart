@@ -4,7 +4,6 @@ import '../viewmodels/pomodoro_viewmodel.dart';
 import '../models/pomodoro_timer.dart';
 import 'settings_page.dart';
 import 'history_page.dart';
-import 'notifications_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -16,15 +15,6 @@ class HomePage extends StatelessWidget {
         title: const Text('Pomodoro Timer'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            tooltip: 'Notifications',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const NotificationsPage()),
-              );
-            },
-          ),
           IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'Historique',

@@ -3,14 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/pomodoro_timer.dart';
 import '../models/pomodoro_session_record.dart';
-import '../services/notification_service.dart';
 
 class PomodoroViewModel extends ChangeNotifier {
   PomodoroTimer _timer;
   Timer? _ticker;
   DateTime? _sessionStartTime;
   final List<PomodoroSessionRecord> _history = [];
-  final NotificationService _notificationService = NotificationService();
 
   // Durées par défaut en secondes
   int _workDuration = 25 * 60;
@@ -25,16 +23,6 @@ class PomodoroViewModel extends ChangeNotifier {
           isRunning: false,
         ) {
     _loadSettings();
-    _initializeNotifications();
-  }
-
-  Future<void> _initializeNotifications() async {
-    try {
-      await _notificationService.initialize();
-    } catch (e) {
-      // En cas d'erreur d'initialisation des notifications, on continue sans
-      debugPrint('Erreur lors de l\'initialisation des notifications: $e');
-    }
   }
 
   // Getters
@@ -160,9 +148,6 @@ class PomodoroViewModel extends ChangeNotifier {
           endTime: endTime,
         ),
       );
-
-      // Envoyer la notification de fin de session
-      _sendSessionCompleteNotification();
     }
 
     _sessionStartTime = null;
@@ -174,15 +159,6 @@ class PomodoroViewModel extends ChangeNotifier {
       isRunning: false,
     );
     notifyListeners();
-  }
-
-  Future<void> _sendSessionCompleteNotification() async {
-    try {
-      await _notificationService.showSessionCompleteNotification(_timer.sessionType);
-    } catch (e) {
-      // En cas d'erreur, on continue sans notification
-      debugPrint('Erreur lors de l\'envoi de la notification: $e');
-    }
   }
 
   // Sauvegarde et chargement des paramètres
@@ -218,7 +194,6 @@ class PomodoroViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _ticker?.cancel();
-    _notificationService.cancelAllNotifications();
     super.dispose();
   }
 }
