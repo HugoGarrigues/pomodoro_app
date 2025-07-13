@@ -142,7 +142,7 @@ class _TestNotifications extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.test_tube, color: Colors.orange[600]),
+                Icon(Icons.science, color: Colors.orange[600]),
                 const SizedBox(width: 8),
                 const Text(
                   'Tester les notifications',
