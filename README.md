@@ -40,11 +40,6 @@ lib/
 
 ## 🚀 Lancer le projet en local
 
-### Prérequis
-
-- Flutter installé (`flutter doctor` pour vérifier)
-- Un projet [Supabase](https://supabase.com/) avec l'authentification activée
-
 ### Installation
 
 1. **Cloner le repo** :
@@ -76,7 +71,7 @@ lib/
 
 ## 🐛 Problèmes rencontrés
 
-- Utilisation de **WSL** pour le dev sous Linux, mais les **plugins audio/notifications** n’étaient pas compatibles
+- Utilisation de **WSL** pour le dev car l'installation windows ne fonctionnait pas, mais les **plugins audio/notifications** n’étaient pas compatibles
 - Plusieurs difficultés liées aux **builds Windows** (chemins, librairies manquantes, droits d’accès…)
 
 ---
