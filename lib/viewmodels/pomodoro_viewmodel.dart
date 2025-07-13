@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:audioplayers/audioplayers.dart';
 import '../models/pomodoro_timer.dart';
 
 class PomodoroSessionRecord {
@@ -13,6 +12,8 @@ class PomodoroSessionRecord {
     required this.startTime,
     required this.endTime,
   });
+
+  Duration get duration => endTime.difference(startTime);
 }
 
 class PomodoroViewModel extends ChangeNotifier {
@@ -26,10 +27,6 @@ class PomodoroViewModel extends ChangeNotifier {
   int shortBreakDuration = 5 * 60;
   int longBreakDuration = 15 * 60;
 
-  // Son d'alerte par défaut
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  String _alertSoundPath = 'assets/sounds/alert_default.mp3';
-
   PomodoroViewModel()
       : _timer = PomodoroTimer(
           totalSeconds: 25 * 60,
@@ -41,7 +38,12 @@ class PomodoroViewModel extends ChangeNotifier {
   PomodoroTimer get timer => _timer;
   List<PomodoroSessionRecord> get history => List.unmodifiable(_history);
 
-  String get currentAlertSoundFilename => _alertSoundPath.split('/').last;
+  // Getters demandés pour pomodoro_page.dart
+  PomodoroSessionType get currentSessionType => _timer.sessionType;
+
+  int get remaining => _timer.remainingSeconds;
+
+  bool get isRunning => _timer.isRunning;
 
   void start() {
     if (_timer.isRunning) return;
@@ -134,20 +136,7 @@ class PomodoroViewModel extends ChangeNotifier {
     );
     notifyListeners();
 
-    playAlertSound();
-  }
-
-  void playAlertSound() async {
-    try {
-      await _audioPlayer.play(AssetSource(_alertSoundPath));
-    } catch (e) {
-      // ignore errors (ex: fichier manquant)
-    }
-  }
-
-  void setAlertSound(String path) {
-    _alertSoundPath = path;
-    notifyListeners();
+    // TODO: ajouter son et alertes ici plus tard
   }
 
   // Méthode pour modifier la durée selon le type

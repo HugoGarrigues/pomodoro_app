@@ -1,12 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../viewmodels/pomodoro_viewmodel.dart';
+import 'pomodoro_history_page.dart';
 import '../models/pomodoro_timer.dart';
 
-class PomodoroPage extends StatelessWidget {
+class PomodoroPage extends StatefulWidget {
   const PomodoroPage({super.key});
 
-  String formatTime(int seconds) {
+  @override
+  State<PomodoroPage> createState() => _PomodoroPageState();
+}
+
+class _PomodoroPageState extends State<PomodoroPage> {
+  final TextEditingController _workController = TextEditingController();
+  final TextEditingController _shortBreakController = TextEditingController();
+  final TextEditingController _longBreakController = TextEditingController();
+
+  @override
+  void dispose() {
+    _workController.dispose();
+    _shortBreakController.dispose();
+    _longBreakController.dispose();
+    super.dispose();
+  }
+
+  String formatDuration(int seconds) {
     final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
     final secs = (seconds % 60).toString().padLeft(2, '0');
     return '$minutes:$secs';
@@ -14,148 +33,134 @@ class PomodoroPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final viewModel = Provider.of<PomodoroViewModel>(context);
+    final viewModel = context.watch<PomodoroViewModel>();
     final timer = viewModel.timer;
 
-    final workController =
-        TextEditingController(text: (viewModel.workDuration ~/ 60).toString());
-    final shortBreakController =
-        TextEditingController(text: (viewModel.shortBreakDuration ~/ 60).toString());
-    final longBreakController =
-        TextEditingController(text: (viewModel.longBreakDuration ~/ 60).toString());
+    _workController.text = (viewModel.workDuration ~/ 60).toString();
+    _shortBreakController.text = (viewModel.shortBreakDuration ~/ 60).toString();
+    _longBreakController.text = (viewModel.longBreakDuration ~/ 60).toString();
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Pomodoro")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+      appBar: AppBar(
+        title: const Text('Pomodoro Timer'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Historique',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const PomodoroHistoryPage(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              formatTime(timer.remainingSeconds),
-              style: const TextStyle(fontSize: 64, fontWeight: FontWeight.bold),
+              timer.sessionType.name.toUpperCase(),
+              style: const TextStyle(fontSize: 32),
             ),
-            const SizedBox(height: 24),
-            Text("Session: ${timer.sessionType.name.toUpperCase()}"),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(onPressed: viewModel.start, child: const Text("Start")),
-                const SizedBox(width: 12),
-                ElevatedButton(onPressed: viewModel.pause, child: const Text("Pause")),
-                const SizedBox(width: 12),
-                ElevatedButton(onPressed: viewModel.reset, child: const Text("Reset")),
-              ],
+            const SizedBox(height: 20),
+            Text(
+              formatDuration(timer.remainingSeconds),
+              style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton(
-                  onPressed: () => viewModel.changeSession(PomodoroSessionType.work),
-                  child: const Text("Work"),
+                  onPressed: timer.isRunning ? viewModel.pause : viewModel.start,
+                  child: Text(timer.isRunning ? 'Pause' : 'Start'),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 ElevatedButton(
-                  onPressed: () => viewModel.changeSession(PomodoroSessionType.shortBreak),
-                  child: const Text("Short Break"),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton(
-                  onPressed: () => viewModel.changeSession(PomodoroSessionType.longBreak),
-                  child: const Text("Long Break"),
+                  onPressed: viewModel.reset,
+                  child: const Text('Reset'),
                 ),
               ],
             ),
-            const SizedBox(height: 40),
-            const Text('Personnaliser les durées (en minutes)', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-
-            // Champ Work
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Work: '),
-                SizedBox(
-                  width: 60,
-                  child: TextField(
-                    controller: workController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
-                    onSubmitted: (value) {
-                      final intValue = int.tryParse(value) ?? 25;
-                      viewModel.setDuration(PomodoroSessionType.work, intValue * 60);
-                    },
-                  ),
-                ),
-                const Text(' min'),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Champ Short Break
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Short Break: '),
-                SizedBox(
-                  width: 60,
-                  child: TextField(
-                    controller: shortBreakController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
-                    onSubmitted: (value) {
-                      final intValue = int.tryParse(value) ?? 5;
-                      viewModel.setDuration(PomodoroSessionType.shortBreak, intValue * 60);
-                    },
-                  ),
-                ),
-                const Text(' min'),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Champ Long Break
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Long Break: '),
-                SizedBox(
-                  width: 60,
-                  child: TextField(
-                    controller: longBreakController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
-                    onSubmitted: (value) {
-                      final intValue = int.tryParse(value) ?? 15;
-                      viewModel.setDuration(PomodoroSessionType.longBreak, intValue * 60);
-                    },
-                  ),
-                ),
-                const Text(' min'),
-              ],
-            ),
-
-            const SizedBox(height: 40),
-            const Text('Choix du son d’alerte', style: TextStyle(fontWeight: FontWeight.bold)),
-            DropdownButton<String>(
-              value: viewModel.selectedSound,
-              items: viewModel.availableSounds.map((soundPath) {
-                final name = soundPath.split('/').last;
-                return DropdownMenuItem(
-                  value: soundPath,
-                  child: Text(name),
+            const SizedBox(height: 20),
+            Wrap(
+              spacing: 8,
+              children: PomodoroSessionType.values.map((type) {
+                return ChoiceChip(
+                  label: Text(type.name.toUpperCase()),
+                  selected: timer.sessionType == type,
+                  onSelected: (_) => viewModel.changeSession(type),
                 );
               }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  viewModel.setSelectedSound(value);
+            ),
+            const Divider(height: 40),
+            const Text(
+              'Modifier les durées (minutes)',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            _buildDurationField(
+              label: 'Travail',
+              controller: _workController,
+              onSubmitted: (value) {
+                final mins = int.tryParse(value);
+                if (mins != null && mins > 0) {
+                  viewModel.setDuration(PomodoroSessionType.work, mins * 60);
+                }
+              },
+            ),
+            _buildDurationField(
+              label: 'Pause courte',
+              controller: _shortBreakController,
+              onSubmitted: (value) {
+                final mins = int.tryParse(value);
+                if (mins != null && mins > 0) {
+                  viewModel.setDuration(PomodoroSessionType.shortBreak, mins * 60);
+                }
+              },
+            ),
+            _buildDurationField(
+              label: 'Pause longue',
+              controller: _longBreakController,
+              onSubmitted: (value) {
+                final mins = int.tryParse(value);
+                if (mins != null && mins > 0) {
+                  viewModel.setDuration(PomodoroSessionType.longBreak, mins * 60);
                 }
               },
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDurationField({
+    required String label,
+    required TextEditingController controller,
+    required Function(String) onSubmitted,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          SizedBox(width: 120, child: Text(label)),
+          Expanded(
+            child: TextField(
+              keyboardType: TextInputType.number,
+              controller: controller,
+              onSubmitted: onSubmitted,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                isDense: true,
+                contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
